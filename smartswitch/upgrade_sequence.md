@@ -19,13 +19,29 @@ sequenceDiagram
     DPUServer ->> Offloader: offloader_cli deploy
     Offloader ->> NPUServer: Containerz.Deploy req
     NPUServer -->> Offloader: Containerz.Deploy resp
+    Offloader -->> DPUServer: offloader_cli deploy success
     DPUServer -->> Splitter: Activate resp
     Splitter -->> Client: Activate resp
     %% Reboot
-    Client ->> Splitter: Reboot req
-    Splitter ->> DPUServer: Reboot req
+    Client ->> Splitter: System.Reboot req
+    Splitter ->> DPUServer: System.Reboot req
     DPUServer ->> DPUHostService: Reboot
-    DPUServer -->> Splitter: Reboot resp
-    Splitter -->> Client: Reboot res
-
+    DPUServer ->> Offloader: (SystemD start) offloader_cli run
+    Offloader ->> NPUServer: Containerz.StartContainer req
+    NPUServer -->> Offloader: Containerz.StartContainer resp
+    Offloader -->> DPUServer: (SystemD start) offloader_cli run success
+    DPUHostService -->> DPUServer: Reboot Success
+    DPUServer -->> Splitter: System.Reboot resp
+    Splitter -->> Client: System.Reboot resp
+    %% Verify sonic image
+    Client ->> Splitter: Os.Verify req
+    Splitter ->> DPUServer: Os.Verify req
+    DPUServer ->> DPUHostService: ImageService.ListImage
+    DPUHostService -->> DPUServer: {current image}
+    Splitter -->> Client: Os.Verify resp
+    %% Verify container image
+    Client ->> Splitter: Containerz.ListContainer
+    Splitter ->> NPUServer: Containerz.ListContainer
+    NPUServer ->> Splitter: gnmi,databasedpu0, databasedpu1....
+    Splitter -->> Client: Containerz.ListContainer resp
 
